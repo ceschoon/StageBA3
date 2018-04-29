@@ -1,0 +1,76 @@
+with the powersave scaling governor:
+dgesvd:
+N=512
+dgesvd gpu time: 1.34561 
+dgesvd cpu time: 0.14646 
+difference: 1.350781e-13 
+N=753
+dgesvd gpu time: 1.66681 
+dgesvd cpu time: 0.46124 
+difference: 1.919886e-13 
+N=1024
+dgesvd gpu time: 1.96850 
+dgesvd cpu time: 1.33185 
+difference: 2.931925e-13 
+N=1359
+dgesvd gpu time: 2.87553 
+dgesvd cpu time: 2.99904 
+difference: 5.422165e-13 
+N=2048
+dgesvd gpu time: 6.37087 
+dgesvd cpu time: 10.95836 
+difference: 8.791262e-13 
+N=3356
+dgesvd gpu time: 22.05041 
+dgesvd cpu time: 15.69782 
+difference: 2.075084e-12 
+N=4096
+dgesvd gpu time: 36.92633 
+dgesvd cpu time: 33.24137 
+difference: 2.638750e-12 
+N=6122
+dgesvd gpu time: 114.60951 
+dgesvd cpu time: 91.09336 
+difference: 7.486588e-12 
+N=8192
+dgesvd gpu time: 285.64074 
+dgesvd cpu time: 421.57142 
+difference: 6.012283e-12 
+ 
+dgesdd:
+N=512
+dgesdd gpu time: 1.42931 
+dgesdd cpu time: 0.16573 
+difference: 1.350781e-13 
+N=753
+dgesdd gpu time: 1.69490 
+dgesdd cpu time: 0.48498 
+difference: 1.919886e-13 
+N=1024
+dgesdd gpu time: 2.33679 
+dgesdd cpu time: 1.46602 
+difference: 2.931925e-13 
+N=1359
+dgesdd gpu time: 3.21572 
+dgesdd cpu time: 3.14572 
+difference: 5.422165e-13 
+N=2048
+dgesdd gpu time: 7.20170 
+dgesdd cpu time: 12.06341 
+difference: 8.791262e-13 
+N=3356
+dgesdd gpu time: 23.86082 
+dgesdd cpu time: 17.15127 
+difference: 2.075084e-12 
+N=4096
+dgesdd gpu time: 41.86963 
+dgesdd cpu time: 35.88694 
+difference: 2.638750e-12 
+N=6122
+dgesdd gpu time: 129.00678 
+dgesdd cpu time: 101.24737 
+difference: 7.486588e-12 
+N=8192
+dgesdd gpu time: 294.99517 
+dgesdd cpu time: 430.61032 
+difference: 6.012283e-12 

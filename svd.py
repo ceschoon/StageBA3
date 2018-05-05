@@ -1,6 +1,6 @@
 import numpy,scipy,scipy.linalg
 
-def svd_scipy_exp_eig_A_B(A, B, alpha, t_vec):
+def svd_scipy_exp_eig_A_B(A, B, alpha, t_vec, stop_after_maximum):
     
     # Décomposition en valeur et vecteur propres Av = cBv
     [c,vecp] = scipy.linalg.eig(A,B)
@@ -15,7 +15,7 @@ def svd_scipy_exp_eig_A_B(A, B, alpha, t_vec):
         print("Il n'y a pas de modes instables ni stationnaires")
     
     c = -1j*alpha*c # pour avoir les valeurs propres de M = -i*alpha*B^-1*A
-    ss = numpy.empty((len(t_vec), len(A)))
+    ss = numpy.zeros((len(t_vec), len(A)))
     
     for i,t in enumerate(t_vec):
         
@@ -27,9 +27,15 @@ def svd_scipy_exp_eig_A_B(A, B, alpha, t_vec):
         u,s,v = scipy.linalg.svd(expMt)
         ss[i,:] = s
         
+        if stop_after_maximum:
+            if ss[i,1]<=ss[i-1,1]:
+                break
+        
     return ss
 
-def svd_scipy_exp_eig(M, t_vec):
+
+
+def svd_scipy_exp_eig(M, t_vec, stop_after_maximum):
     
     # Décomposition en valeur et vecteur propres de M
     [c,vecp] = scipy.linalg.eig(M)
@@ -43,7 +49,7 @@ def svd_scipy_exp_eig(M, t_vec):
     else:
         print("Il n'y a pas de modes instables ni stationnaires")
     
-    ss = numpy.empty((len(t_vec), len(M)))
+    ss = numpy.zeros((len(t_vec), len(M)))
     
     for i,t in enumerate(t_vec):
         
@@ -54,5 +60,9 @@ def svd_scipy_exp_eig(M, t_vec):
         # Svd de exp(M*t)
         u,s,v = scipy.linalg.svd(expMt)
         ss[i,:] = s
+        
+        if stop_after_maximum:
+            if ss[i,1]<=ss[i-1,1]:
+                break
         
     return ss

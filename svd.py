@@ -24,7 +24,7 @@ def svd_scipy_exp_eig_A_B(A, B, alpha, t_vec, stop_after_maximum):
         expMt = numpy.dot( numpy.dot(vecp,D) , vecp_inv )
     
         # Svd de exp(M*t)
-        u,s,v = scipy.linalg.svd(expMt)
+        s = scipy.linalg.svd(expMt,compute_uv=False)
         ss[i,:] = s
         
         if stop_after_maximum:

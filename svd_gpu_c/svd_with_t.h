@@ -4,6 +4,7 @@
 void profilU(double *y, double *u, int n);
 void profilU2(double *y, double *u, int n);
 void identity(magmaDoubleComplex *l, int n);
+void fill_zeros(magmaDoubleComplex *l, int n);
 void linspace(double *y, double min, double max, double n);
 void f(magmaDoubleComplex *k, magmaDoubleComplex *l, 
 	   double *d2, double *d4, double *y, int n, double t, double re, 

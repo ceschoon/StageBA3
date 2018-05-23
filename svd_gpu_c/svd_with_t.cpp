@@ -14,6 +14,8 @@ void profilU(double *y, double *u, int n)
 		u[i] = 1-pow(y[i],2);
 	}
 }
+
+// dérivée seconde du profil de vitesse
 void profilU2(double *y, double *u2, int n)
 {
 	for (int i=0; i<n; i++)
@@ -55,6 +57,7 @@ void f(magmaDoubleComplex *k, magmaDoubleComplex *l,
 	   double *d2, double *d4, 
 	   double *y, int n, double t, double re, double alpha)
 {
+	// init. variables et alloc. de la memoire
 	double dy = 2.0/(n+3);
 	double *u,*u2;
 	magmaDoubleComplex *a_cpu,*b_cpu,*a,*b,*m, *zeros;
@@ -68,7 +71,7 @@ void f(magmaDoubleComplex *k, magmaDoubleComplex *l,
 	magma_zmalloc(&b , n*n);
 	magma_zmalloc(&m , n*n);
 	
-	// calcule le profil de vitesse
+	// calcul du profil de vitesse
 	profilU(y,u,n);
 	profilU2(y,u2,n);
 	
@@ -114,8 +117,8 @@ void f(magmaDoubleComplex *k, magmaDoubleComplex *l,
 	/*		
 	printf("\nm en t=%f:", t);
 	magma_zgetmatrix(n,n,m,n,a_cpu,n);
-	printf("\nreal: %f", 1000000000*MAGMA_Z_REAL(a_cpu[0]));
-	printf("\nimag: %f", 1000000000*MAGMA_Z_IMAG(a_cpu[0]));
+	printf("\nreal: %f", MAGMA_Z_REAL(a_cpu[0]));
+	printf("\nimag: %f", MAGMA_Z_IMAG(a_cpu[0]));
 	*/
 	
 	// k = m*l
@@ -165,7 +168,7 @@ void svd_with_t(double re, double alpha, int N, double tMax, double dt,
 	magma_zmalloc(&k3, n*n);
 	magma_zmalloc(&k4, n*n);
 	
-	// prépare le calcul de la svd
+	// prépare le calcul de la svd hors de la boucle 
 	magma_dmalloc_cpu(&s1,n);
 	magma_dmalloc_cpu(&rwork,5*n);
 	magma_int_t nb = magma_get_dgesvd_nb(n,n); // optim. block size
@@ -201,6 +204,7 @@ void svd_with_t(double re, double alpha, int N, double tMax, double dt,
 		magmablas_zgeadd(n,n,MAGMA_Z_MAKE(dt/6  ,0),k4,n,l,n);
 		t = t+dt;
 		
+		// calcule la svd 1 fois sur "step"
 		if ((i+1)%step==0)
 		{	
 			int j = (i+1)/step;
@@ -212,6 +216,7 @@ void svd_with_t(double re, double alpha, int N, double tMax, double dt,
 						 
 			sMaxVec[j-1] = s1[0];
 			tVec[j-1] = t;
+			
 			/*
 			printf("\nl en t=%f:", t);
 			magma_zgetmatrix(n,n,l,n,l_cpu,n);
@@ -235,6 +240,7 @@ void svd_with_t(double re, double alpha, int N, double tMax, double dt,
 	}
 	fclose(dataFile);
 	
+	// désalloue la mémoire
 	magma_free_cpu(tVec);
 	magma_free_cpu(sMaxVec);
 	magma_free_cpu(temp_cpu);

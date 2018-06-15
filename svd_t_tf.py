@@ -4,23 +4,27 @@ import operateurs_t_tf
 
 def f(t,l,Re,alpha,N,U):
     
-    sess = tf.Session()
-    
     [a,b] = operateurs_t_tf.buildAB_forward(Re, alpha, N, U, t)
     b = b*(1+0.0j)
     
-    A = tf.placeholder(tf.complex128, shape=(N-4, N-4))
-    B = tf.placeholder(tf.complex128, shape=(N-4, N-4))
-    L = tf.placeholder(tf.complex128, shape=(N-4, N-4))
+    b_inv = numpy.linalg.inv(b)
+    m = -1j*alpha*numpy.dot(b_inv,a)
+    l_new = numpy.dot(m,l)
 
-    with tf.device('/gpu:0'):
-        B_inv = tf.matrix_inverse(B)
-        M = tf.multiply(-1j*alpha,tf.matmul(B_inv,A))
-        L_new = tf.matmul(L,M)
+#    sess = tf.Session()
+
+#    A = tf.placeholder(tf.complex128, shape=(N-4, N-4))
+#    B = tf.placeholder(tf.complex128, shape=(N-4, N-4))
+#    L = tf.placeholder(tf.complex128, shape=(N-4, N-4))
+
+#    with tf.device('/gpu:0'):
+#        B_inv = tf.matrix_inverse(B)
+#        M = tf.multiply(-1j*alpha,tf.matmul(B_inv,A))
+#        L_new = tf.matmul(L,M)
     
-    l_new = sess.run(L_new, feed_dict={A:a,B:b,L:l})
+#    l_new = sess.run(L_new, feed_dict={A:a,B:b,L:l})
     
-    sess.close()
+#    sess.close()
     
     return l_new
 
@@ -45,27 +49,27 @@ def svd_tf_RK4(Re,alpha,N,t_max,dt,step,U):
     
         t = t+dt
         
-        #sess = tf.Session()
+        sess = tf.Session()
         
-        #K1 = tf.placeholder(tf.complex128, shape=(N-4, N-4))
-        #K2 = tf.placeholder(tf.complex128, shape=(N-4, N-4))
-        #K3 = tf.placeholder(tf.complex128, shape=(N-4, N-4))
-        #K4 = tf.placeholder(tf.complex128, shape=(N-4, N-4))
-        #L  = tf.placeholder(tf.complex128, shape=(N-4, N-4))
+        K1 = tf.placeholder(tf.complex128, shape=(N-4, N-4))
+        K2 = tf.placeholder(tf.complex128, shape=(N-4, N-4))
+        K3 = tf.placeholder(tf.complex128, shape=(N-4, N-4))
+        K4 = tf.placeholder(tf.complex128, shape=(N-4, N-4))
+        L  = tf.placeholder(tf.complex128, shape=(N-4, N-4))
         
-        #with tf.device('/gpu:0'):
-        #    L_new = L + 1/6*(K1+2*K2+2*K3+K4)
+        with tf.device('/gpu:0'):
+            L_new = L + 1/6*(K1+2*K2+2*K3+K4)
         
-        #l = sess.run(L_new, feed_dict={K1:k1,K2:k2,K3:k3,K4:k4,L:l})
+        l = sess.run(L_new, feed_dict={K1:k1,K2:k2,K3:k3,K4:k4,L:l})
            
-        #sess.close()
+        sess.close()
         
-        l = l + 1/6*(k1+2*k2+2*k3+k4)
+#        l = l + 1/6*(k1+2*k2+2*k3+k4)
     
         # Calcul de svd
         if i%step==0:
             index = int(i/step)
-            s = scipy.linalg.svd(L,compute_uv=False)
+            s = scipy.linalg.svd(l,compute_uv=False)
             st[index,:] = s
             t_vec[index] = t
             

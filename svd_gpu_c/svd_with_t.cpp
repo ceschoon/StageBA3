@@ -1,12 +1,25 @@
+/***************************************************************************
+ * 	
+ *	But: Calcul de valeurs singulières maximales en fonction du temps de la
+ *		 matrice réalisant l'évolution temporelle des modes propres de
+ *		 de l'équation d'Orr-Sommerfeld.
+ * 		 (voir notebook pour le contexte du calcul)
+ *
+ *  Les résultats du calcul sont écrits dans le fichier ./data/data
+ *
+ *	Auteur: Cédric Schoonen
+ * 
+ ***************************************************************************/
+
 #include <cuda.h>
 #include <math.h>
 #include <stdio.h>
 #include "magma.h"
-#include "operateurs.h" 
 #include "magma_operators.h"
+#include "operateurs.h" // code pour la construction des opérateurs dérivées
 #include "svd_with_t.h"	
 
-// profil de vitesse
+/* profil de vitesse */
 void profilU(double *y, double *u, int n)
 {
 	for (int i=0; i<n; i++)
@@ -15,7 +28,7 @@ void profilU(double *y, double *u, int n)
 	}
 }
 
-// dérivée seconde du profil de vitesse
+/* dérivée seconde du profil de vitesse */
 void profilU2(double *y, double *u2, int n)
 {
 	for (int i=0; i<n; i++)
@@ -24,6 +37,7 @@ void profilU2(double *y, double *u2, int n)
 	}
 }
 
+/* fonctions utilitaires sans intérêt physique */
 void identity(magmaDoubleComplex *l, int n)
 {
 	for (int i=0; i<n*n; i++)
@@ -52,12 +66,14 @@ void linspace(double *y, double min, double max, double n)
 	}
 }
 
-// fonction f dans RK4: dérivée de l(t)
-void f(magmaDoubleComplex *k, magmaDoubleComplex *l, 
+/* fonction "d'évolution" f dans RK4: dérivée de l(t) */
+
+void f(magmaDoubleComplex *k, // out, k=l'(t)
+	   magmaDoubleComplex *l, 
 	   double *d2, double *d4, 
 	   double *y, int n, double t, double re, double alpha)
 {
-	// init. variables et alloc. de la memoire
+	/* init. variables et alloc. de la memoire */
 	double dy = 2.0/(n+3);
 	double *u,*u2;
 	magmaDoubleComplex *a_cpu,*b_cpu,*a,*b,*m, *zeros;
@@ -71,11 +87,11 @@ void f(magmaDoubleComplex *k, magmaDoubleComplex *l,
 	magma_zmalloc(&b , n*n);
 	magma_zmalloc(&m , n*n);
 	
-	// calcul du profil de vitesse
+	/* calcul du profil de vitesse */
 	profilU(y,u,n);
 	profilU2(y,u2,n);
 	
-	// calcul des opérateurs a et b
+	/* calcul des opérateurs a et b */
 	for (int i=0; i<n*n; i++)
 	{
 		b_cpu[i] = MAGMA_Z_MAKE(d2[i],0);
@@ -96,20 +112,20 @@ void f(magmaDoubleComplex *k, magmaDoubleComplex *l,
 	magma_zsetmatrix(n,n,a_cpu,n,a,n);
 	magma_zsetmatrix(n,n,b_cpu,n,b,n);
 	
-	// prépare le calcul de l'inverse de b
+	/* prépare le calcul de l'inverse de b */
 	magmaDoubleComplex *dwork;
 	magma_int_t ldwork,*piv,info;
 	ldwork = n*magma_get_zgetri_nb(n);
 	magma_zmalloc(&dwork,ldwork);
 	piv=(magma_int_t*)malloc(n*sizeof(magma_int_t));
-	// calcul 
+	/* calcul de l'inverse de b */
 	magma_zgetrf_gpu(n,n,b,n,piv,&info); // LU
 	magma_zgetri_gpu(n,b,n,piv,dwork,ldwork,&info); // inverse
-	// nettoyage
+	/* nettoyage */
 	magma_free(dwork);
 	free(piv);
 	
-	// m = b^-1*a
+	/* m = b^-1*a */
 	fill_zeros(zeros,n);
 	magma_zsetmatrix(n,n,zeros,n,m,n);
 	magma_zgemm(MagmaNoTrans,MagmaNoTrans,n,n,n,MAGMA_Z_MAKE(0,-alpha),
@@ -121,11 +137,12 @@ void f(magmaDoubleComplex *k, magmaDoubleComplex *l,
 	printf("\nimag: %f", MAGMA_Z_IMAG(a_cpu[0]));
 	*/
 	
-	// k = m*l
+	/* k = l'(t) = m*l */
 	magma_zsetmatrix(n,n,zeros,n,k,n);
 	magma_zgemm(MagmaNoTrans,MagmaNoTrans,n,n,n,MAGMA_Z_MAKE(1,0),
 				m,n,l,n,MAGMA_Z_MAKE(0,0),k,n);
 	
+	/* nettoyage */
 	magma_free_cpu(a_cpu);
 	magma_free_cpu(b_cpu);
 	magma_free_cpu(zeros);
@@ -136,10 +153,12 @@ void f(magmaDoubleComplex *k, magmaDoubleComplex *l,
 	magma_free(m);
 }
 
-
+/* Fonction réalisant le calcul de svd */
 void svd_with_t(double re, double alpha, int N, double tMax, double dt, 
 				int step)
 {
+	/* init. variables et alloc. de la memoire */
+	
 	int n = N-4;
 	int nt = int(tMax/dt)+1;
 	double t=0;
@@ -168,7 +187,10 @@ void svd_with_t(double re, double alpha, int N, double tMax, double dt,
 	magma_zmalloc(&k3, n*n);
 	magma_zmalloc(&k4, n*n);
 	
-	// prépare le calcul de la svd hors de la boucle 
+	/* 
+	 * prépare le calcul de la svd hors de la boucle 
+	 */
+	 
 	magma_dmalloc_cpu(&s1,n);
 	magma_dmalloc_cpu(&rwork,5*n);
 	magma_int_t nb = magma_get_dgesvd_nb(n,n); // optim. block size
@@ -177,16 +199,19 @@ void svd_with_t(double re, double alpha, int N, double tMax, double dt,
 	magma_zmalloc_cpu(&u,n*n);
 	magma_zmalloc_cpu(&vt,n*n);
 	
-	buildD2_forward(d2, n, dy); // opérateurs dérivées
+	/* Construction des objets physique */
+	
+	buildD2_forward(d2, n, dy);
 	buildD4_forward(d4, n, dy);
 	linspace(y,-1+2*dy,1-2*dy,n);
 	
-	identity(temp_cpu,n); // init l avec l'identité
-	magma_zsetmatrix(n,n,temp_cpu,n,l,n);
+	identity(temp_cpu,n); // init l (résolvante) avec l'identité
+	magma_zsetmatrix(n,n,temp_cpu,n,l,n); // transfert vers gpu
 	
-	// intégration avec RK4
 	for (int i=0; i<nt; i++)
 	{
+		/* intégration par RK4 */
+		
 		f(k1,l,d2,d4,y,n,t,re,alpha);
 		magma_zcopymatrix(n,n,l,n,l2,n);
 		magmablas_zgeadd(n,n,MAGMA_Z_MAKE(dt/2,0),k1,n,l2,n);
@@ -204,7 +229,7 @@ void svd_with_t(double re, double alpha, int N, double tMax, double dt,
 		magmablas_zgeadd(n,n,MAGMA_Z_MAKE(dt/6  ,0),k4,n,l,n);
 		t = t+dt;
 		
-		// calcule la svd 1 fois sur "step"
+		/* calcul de la svd 1 fois sur "step" */
 		if ((i+1)%step==0)
 		{	
 			int j = (i+1)/step;
@@ -226,7 +251,7 @@ void svd_with_t(double re, double alpha, int N, double tMax, double dt,
 		}
 	}
 	
-	// écrit les résultats dans un fichier
+	/* écrit les résultats dans un fichier */
 	FILE *dataFile;
 	
 	dataFile = fopen("data/data","w"); // écrase le contenu initial
@@ -240,7 +265,7 @@ void svd_with_t(double re, double alpha, int N, double tMax, double dt,
 	}
 	fclose(dataFile);
 	
-	// désalloue la mémoire
+	/* désalloue la mémoire */
 	magma_free_cpu(tVec);
 	magma_free_cpu(sMaxVec);
 	magma_free_cpu(temp_cpu);

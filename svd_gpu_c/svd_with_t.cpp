@@ -119,7 +119,13 @@ void f(magmaDoubleComplex *k, // out, k=l'(t)
 	magma_zmalloc(&dwork,ldwork);
 	piv=(magma_int_t*)malloc(n*sizeof(magma_int_t));
 	/* calcul de l'inverse de b */
-	magma_zgetrf_gpu(n,n,b,n,piv,&info); // LU
+    
+	printf("Avant seg fault\n");
+	fflush(stdout);
+	magma_zgetrf_gpu(n,n,b,n,piv,&info); // LU	// SEG FAULT RIGHT HERE -> WHY?
+	printf("Après seg fault\n");
+	fflush(stdout);
+    
 	magma_zgetri_gpu(n,b,n,piv,dwork,ldwork,&info); // inverse
 	/* nettoyage */
 	magma_free(dwork);
